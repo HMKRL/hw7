@@ -7,7 +7,7 @@ void print_result();
 
 int main() {
 	int i, j, rows = 0, curr_row = 0, curr_num = 0, n, number = 0;
-	char temp, input_file[] = "bucket.in", *row = malloc(200 * sizeof(char));
+	char temp, input_file[] = "buckets.in", *row = malloc(200 * sizeof(char));
 	FILE *infp;
 
 	printf("Please input n:");
