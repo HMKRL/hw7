@@ -7,7 +7,7 @@ void print_result();
 
 int main() {
 	int i, j, rows = 0, curr_row = 0, curr_num = 0, n, number = 0;
-	char temp, input_file[] = "buckets.in", *row = malloc(200 * sizeof(char));
+	char temp, input_file[11] = "buckets.in\0", *row = malloc(200 * sizeof(char));
 	FILE *infp;
 
 	printf("Please input n:");
@@ -25,16 +25,16 @@ int main() {
 		rows++;
 	}
 	free(row);
-	int orig_bucket[rows][40];
+	int **orig_bucket;
+	orig_bucket = malloc(rows * sizeof(int*));
 	for(i = 0;i < rows;i++) {
-		for(j = 0;j < 40;j++) {
-			orig_bucket[i][j] = 0;
-		}
+		orig_bucket[i] = calloc(40, sizeof(int));
 	}
 
 //reset read head
 	rewind(infp);
 
+//get number from file"buckets.in" and store into array
 	while(1) {
 		temp = fgetc(infp);
 	
@@ -58,9 +58,13 @@ int main() {
 			number *= 10;
 			number += (int)temp - 48;
 		}
-		else if(temp == '\r')
-			printf("I Hate M$ Windows\n");
 	}
+//release allocated memory
+	for(i = 0;i < rows;i++) {
+		free(orig_bucket[i]);
+	}
+	free(orig_bucket);
+
 	return 0;
 }
 
