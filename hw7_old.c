@@ -88,18 +88,16 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 	firstMi -> map -> next = NULL;
 
 	Mi *curMi = firstMi;
-	Map *curMap;
 
 	while(i <= rows) {
-		curMap = curMi -> map;
 		if(curMi -> next != NULL) {
 			curr_num = 0;
 			count = 0;
-			while(orig_bucket[curr_row][curr_num] != 0 && curMap -> next != NULL) {
-				if(orig_bucket[curr_row][curr_num] != curMap -> value) {
-					if(orig_bucket[curr_row][curr_num] > curMap -> value) {
+			while(orig_bucket[curr_row][curr_num] != 0 && curMi -> map -> next != NULL) {
+				if(orig_bucket[curr_row][curr_num] != curMi -> map -> value) {
+					if(orig_bucket[curr_row][curr_num] > curMi -> map -> value) {
 						count++;
-						curMap = curMap -> next;
+						curMi -> map = curMi -> map -> next;
 					}
 					else {
 						count++;
@@ -108,7 +106,7 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 				}
 				else {
 					count++;
-					curMap = curMap -> next;
+					curMi -> map = curMi -> map -> next;
 					curr_num++;
 				}
 			}
@@ -138,7 +136,6 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 		}
 		i++;
 	}
-
 	curMi = firstMi;
 	while(curMi -> next != NULL) {
 		while(curMi -> map -> next != NULL) {
@@ -154,41 +151,41 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 
 void print_result(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, int curr_row, int n) {
 	int i = 0;
-	Map *tempMap, *curMap = curMi -> map;
+	Map *tempMap;
 	while(orig_bucket[curr_row][i] != 0) {
-		if(orig_bucket[curr_row][i] < curMap -> value) {
+		if(orig_bucket[curr_row][i] < (curMi -> map) -> value) {
 			tempMap = calloc(1, sizeof(Map));
 			tempMap -> value = orig_bucket[curr_row][i];
-			tempMap -> next = curMap;
-			curMap = tempMap;
+			tempMap -> next = curMi -> map;
+			curMi -> map = tempMap;
 			i++;
 		}
-		else if(orig_bucket[curr_row][i] == curMap -> value) {
+		else if(orig_bucket[curr_row][i] == (curMi -> map) -> value) {
 			i++;
 		}
-		else if(orig_bucket[curr_row][i] > curMap -> value) {
-			if(curMap -> next != NULL) {
-				if(orig_bucket[curr_row][i] < curMap -> next -> value) {
+		else if(orig_bucket[curr_row][i] > (curMi -> map) -> value) {
+			if((curMi -> map) -> next != NULL) {
+				if(orig_bucket[curr_row][i] < (curMi -> map) -> next -> value) {
 					tempMap = calloc(1, sizeof(Map));
 					tempMap -> value = orig_bucket[curr_row][i];
-					tempMap -> next = curMap -> next;
-					curMap -> next = tempMap;
-					curMap = curMap -> next;
+					tempMap -> next = (curMi -> map) -> next;
+					(curMi -> map) -> next = tempMap;
+					curMi -> map = tempMap;
 					i++;
 				}
 				else {
-					curMap = curMap -> next;
+					curMi -> map = (curMi -> map) -> next;
 				}
 			}
-			else if(curMap -> value == 0) {
-				curMap -> value = orig_bucket[curr_row][i];
+			else if((curMi -> map) -> value == 0) {
+				(curMi -> map) -> value = orig_bucket[curr_row][i];
 				i++;
 			}
 			else {
-				curMap -> next = calloc(1, sizeof(Map));
-				curMap = curMap -> next;
-				curMap -> value = orig_bucket[curr_row][i];
-				curMap -> next = NULL;
+				(curMi -> map) -> next = calloc(1, sizeof(Map));
+				curMi -> map = (curMi -> map) -> next;
+				(curMi -> map) -> value = orig_bucket[curr_row][i];
+				(curMi -> map) -> next = NULL;
 				i++;
 			}
 		}
