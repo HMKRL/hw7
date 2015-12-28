@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdbool.h>
 
 struct mapping {
 	int value;
@@ -16,7 +17,7 @@ typedef struct m_index Mi;
 
 int bucket_union(int**, FILE*);
 int new_mapping(int**, const int, int);
-void print_result(Mi*, FILE*, FILE*, int**, int, int);
+void store_into_bucket(Mi*, FILE*, FILE*, int**, int, int);
 
 int main() {
 	int i, rows = 0, n;
@@ -79,8 +80,9 @@ int bucket_union(int **orig_bucket, FILE *infp) {
 }
 
 int new_mapping(int **orig_bucket, const int n, int rows) {
-	int curr_row = 0, curr_num = 0, count = 0, i = 0;
+	int curr_row = 0, curr_num = 0, count = 0;
 	FILE *m_out = fopen("mapping.out", "w"), *b_out = fopen("buckets.out", "w");
+	bool need_new = false;
 
 	Mi *firstMi = malloc(sizeof(Mi));
 	firstMi -> map = calloc(1, sizeof(Map));
@@ -88,62 +90,95 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 	firstMi -> map -> next = NULL;
 
 	Mi *curMi = firstMi;
-	Map *curMap;
+	Map *curMap, *tempMap;
 
-	while(i <= rows) {
+	while(curr_row < rows) {
+		count = 0;
+		curr_num = 0;
 		curMap = curMi -> map;
-		if(curMi -> next != NULL) {
-			curr_num = 0;
-			count = 0;
-			while(orig_bucket[curr_row][curr_num] != 0 && curMap -> next != NULL) {
-				if(orig_bucket[curr_row][curr_num] != curMap -> value) {
-					if(orig_bucket[curr_row][curr_num] > curMap -> value) {
-						count++;
-						curMap = curMap -> next;
+		if(!need_new) {
+			while(orig_bucket[curr_row][curr_num] != 0) {
+				if(curMap -> next != NULL) {
+					if(orig_bucket[curr_row][curr_num] != curMap -> value) {
+						if(orig_bucket[curr_row][curr_num] > curMap -> value) {
+							count++;
+							curMap = curMap -> next;
+						}
+						else {
+							count++;
+							curr_num++;
+						}
 					}
 					else {
 						count++;
+						curMap = curMap -> next;
 						curr_num++;
 					}
 				}
 				else {
-					count++;
-					curMap = curMap -> next;
-					curr_num++;
+					if(orig_bucket[curr_row][curr_num] != curMap -> value) {
+						if(orig_bucket[curr_row][curr_num] > curMap -> value) {
+							count++;
+							break;
+						}
+						else {
+							count++;
+							curr_num++;
+						}
+					}
+					else {
+						count++;
+						curr_num++;
+						break;
+					}
 				}
 			}
 			while(orig_bucket[curr_row][curr_num] != 0) {
 				count++;
 				curr_num++;
 			}
+			tempMap = curMap;
+			while(tempMap -> value != 0) {
+				if(tempMap -> next == NULL) {
+					count++;
+					break;
+				}
+				tempMap = tempMap -> next;
+				count++;
+			}
 			if((count) <= n) {//save current row into new mapping
-				print_result(curMi, m_out, b_out, orig_bucket, curr_row, n);
+				store_into_bucket(curMi, m_out, b_out, orig_bucket, curr_row, n);
 				curr_row++;
 				curMi = firstMi;
 				curr_num = 0;
 			}
-			else {//scan next bucket
+			else if(curMi -> next != NULL){//scan next bucket
 				curMi = curMi -> next;
 				curr_num = 0;
 			}
+			else {
+				need_new = true;
+			}
 		}
 		else {
-			print_result(curMi, m_out, b_out, orig_bucket, curr_row, n);
+			need_new = false;
 			curMi -> next = malloc(sizeof(Mi));
 			curMi = curMi -> next;
 			curMi -> map = calloc(1, sizeof(Map));
 			curMi -> map -> next = NULL;
 			curMi -> next = NULL;
+			store_into_bucket(curMi, m_out, b_out, orig_bucket, curr_row, n);
+			curr_row++;
 			curMi = firstMi;
 		}
-		i++;
 	}
 
 	curMi = firstMi;
 	while(curMi -> next != NULL) {
-		while(curMi -> map -> next != NULL) {
-			printf("%d ", curMi -> map -> value);
-			curMi -> map = curMi -> map -> next;
+		curMap = curMi -> map;
+		while(curMap -> next != NULL) {
+			printf("%d ", curMap -> value);
+			curMap = curMap -> next;
 		}
 		printf("\n");
 		curMi = curMi -> next;
@@ -152,7 +187,7 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 	return 0;
 }
 
-void print_result(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, int curr_row, int n) {
+void store_into_bucket(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, int curr_row, int n) {
 	int i = 0;
 	Map *tempMap, *curMap = curMi -> map;
 	while(orig_bucket[curr_row][i] != 0) {
