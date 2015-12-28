@@ -62,6 +62,7 @@ int main() {
 	}
 	free(orig_bucket);
 	free(row);
+	fclose(infp);
 
 	return 0;
 }
@@ -184,6 +185,29 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 	}
 	print_result(firstMi, mapping, n, rows, orig_bucket);
 
+//free memory
+	for(i = 0;i < rows;i++) {
+		free(mapping[i]);
+	}
+	free(mapping);
+//free linked list
+	Mi *tempMi;
+	while(firstMi != NULL) {
+		curMap = firstMi -> map;
+		while(curMap != NULL) {
+			tempMap = curMap -> next;
+			free(curMap);
+			curMap = tempMap;
+		}
+		free(curMap);
+		free(tempMap);
+		tempMi = firstMi -> next;
+		free(firstMi);
+		firstMi = tempMi;
+	}
+	free(firstMi);
+	free(tempMi);
+	
 	return 0;
 }
 
