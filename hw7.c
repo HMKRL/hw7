@@ -17,7 +17,8 @@ typedef struct m_index Mi;
 
 int bucket_union(int**, FILE*);
 int new_mapping(int**, const int, int);
-void store_into_bucket(Mi*, FILE*, FILE*, int**, int, int);
+void store_into_bucket(Mi*, int**, int, int**);
+void print_result(Mi*, int**, int, int);
 
 int main() {
 	int i, rows = 0, n;
@@ -80,9 +81,12 @@ int bucket_union(int **orig_bucket, FILE *infp) {
 }
 
 int new_mapping(int **orig_bucket, const int n, int rows) {
-	int curr_row = 0, curr_num = 0, count = 0;
-	FILE *m_out = fopen("mapping.out", "w"), *b_out = fopen("buckets.out", "w");
+	int curr_row = 0, curr_num = 0, count = 0, index = 0, i;
 	bool need_new = false;
+	int **mapping = malloc(rows * sizeof(int*));
+	for(i = 0;i < rows;i++) {
+		mapping[i] = calloc(n + 1, sizeof(int));
+	}
 
 	Mi *firstMi = malloc(sizeof(Mi));
 	firstMi -> map = calloc(1, sizeof(Map));
@@ -147,13 +151,16 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 				count++;
 			}
 			if((count) <= n) {//save current row into new mapping
-				store_into_bucket(curMi, m_out, b_out, orig_bucket, curr_row, n);
+				mapping[curr_row][0] = index;
+				store_into_bucket(curMi, orig_bucket, curr_row, mapping);
 				curr_row++;
 				curMi = firstMi;
+				index = 0;
 				curr_num = 0;
 			}
 			else if(curMi -> next != NULL){//scan next bucket
 				curMi = curMi -> next;
+				index++;
 				curr_num = 0;
 			}
 			else {
@@ -164,48 +171,39 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 			need_new = false;
 			curMi -> next = malloc(sizeof(Mi));
 			curMi = curMi -> next;
+			index++;
 			curMi -> map = calloc(1, sizeof(Map));
 			curMi -> map -> next = NULL;
 			curMi -> next = NULL;
-			store_into_bucket(curMi, m_out, b_out, orig_bucket, curr_row, n);
+			mapping[curr_row][0] = index;
+			store_into_bucket(curMi, orig_bucket, curr_row, mapping);
 			curr_row++;
 			curMi = firstMi;
+			index = 0;
 		}
 	}
-	curMi = firstMi;
-	while(curMi -> next != NULL) {
-		curMap = curMi -> map;
-		while(curMap -> next != NULL) {
-			printf("%d ", curMap -> value);
-			curMap = curMap -> next;
-		}
-		printf("%d\n", curMap -> value);
-		curMi = curMi -> next;
-	}
-			curMap = curMi -> map;
-		while(curMap -> next != NULL) {
-			printf("%d ", curMap -> value);
-			curMap = curMap -> next;
-		}
-		printf("%d\n", curMap -> value);
-
+	print_result(firstMi, mapping, n, rows);
 
 	return 0;
 }
 
-void store_into_bucket(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, int curr_row, int n) {
-	int i = 0;
+void store_into_bucket(Mi *curMi, int **orig_bucket, int curr_row, int **mapping) {
+	int i = 0, count = 1;
 	Map *tempMap, *curMap = curMi -> map;
 	while(orig_bucket[curr_row][i] != 0) {
 		if(orig_bucket[curr_row][i] < curMap -> value) {
 			tempMap = calloc(1, sizeof(Map));
 			tempMap -> value = orig_bucket[curr_row][i];
+			mapping[curr_row][count] = 1;
+			count++;
 			tempMap -> next = curMap;
 			curMap = tempMap;
 			curMi -> map = curMap;
 			i++;
 		}
 		else if(orig_bucket[curr_row][i] == curMap -> value) {
+			mapping[curr_row][count] = 1;
+			count++;
 			i++;
 		}
 		else /*if(orig_bucket[curr_row][i] > curMap -> value)*/ {
@@ -217,14 +215,22 @@ void store_into_bucket(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, i
 					curMap -> next = tempMap;
 					curMap = curMap -> next;
 					i++;
+					mapping[curr_row][count] = 0;
+					count++;
+					mapping[curr_row][count] = 1;
+					count++;
 				}
 				else {
 					curMap = curMap -> next;
+					mapping[curr_row][count] = 0;
+					count++;
 				}
 			}
 			else if(curMap -> value == 0) {
 				curMap -> value = orig_bucket[curr_row][i];
 				i++;
+				mapping[curr_row][count] = 0;
+				count++;
 			}
 			else {
 				curMap -> next = calloc(1, sizeof(Map));
@@ -232,7 +238,49 @@ void store_into_bucket(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, i
 				curMap -> value = orig_bucket[curr_row][i];
 				curMap -> next = NULL;
 				i++;
+				mapping[curr_row][count] = 0;
+				count++;
+				mapping[curr_row][count] = 1;
+				count++;
 			}
 		}
 	}
+}
+
+void print_result(Mi* curMi, int **mapping, int n, int rows) {
+	FILE *b_out = fopen("buckets.out", "w"), *m_out = fopen("mapping.out", "w");
+	Map *curMap;
+	int i, j, count = 1;
+
+	while(curMi -> next != NULL) {
+		curMap = curMi -> map;
+		while(curMap -> next != NULL) {
+			printf("%d ", curMap -> value);
+			fprintf(b_out, "%d ", curMap -> value);
+			curMap = curMap -> next;
+		}
+		printf("%d\n", curMap -> value);
+		fprintf(b_out, "%d\n", curMap -> value);
+		curMi = curMi -> next;
+		count++;
+	}
+	curMap = curMi -> map;
+	while(curMap -> next != NULL) {
+		printf("%d ", curMap -> value);
+		fprintf(b_out, "%d ", curMap -> value);
+		curMap = curMap -> next;
+	}
+	printf("%d\n", curMap -> value);
+	fprintf(b_out, "%d", curMap -> value);
+	
+	for(i = 0;i < rows;i++) {
+		fprintf(m_out, "%d ", mapping[i][0]);
+		for(j = 1;j < n + 1;j++) {
+			fprintf(m_out, "%d", mapping[i][j]);
+		}
+		fprintf(m_out, "%c", '\n');
+	}
+
+	fclose(b_out);
+	fclose(m_out);
 }
