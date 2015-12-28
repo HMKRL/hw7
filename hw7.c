@@ -172,7 +172,6 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 			curMi = firstMi;
 		}
 	}
-
 	curMi = firstMi;
 	while(curMi -> next != NULL) {
 		curMap = curMi -> map;
@@ -180,9 +179,16 @@ int new_mapping(int **orig_bucket, const int n, int rows) {
 			printf("%d ", curMap -> value);
 			curMap = curMap -> next;
 		}
-		printf("\n");
+		printf("%d\n", curMap -> value);
 		curMi = curMi -> next;
 	}
+			curMap = curMi -> map;
+		while(curMap -> next != NULL) {
+			printf("%d ", curMap -> value);
+			curMap = curMap -> next;
+		}
+		printf("%d\n", curMap -> value);
+
 
 	return 0;
 }
@@ -196,12 +202,13 @@ void store_into_bucket(Mi *curMi, FILE *m_out, FILE *b_out, int **orig_bucket, i
 			tempMap -> value = orig_bucket[curr_row][i];
 			tempMap -> next = curMap;
 			curMap = tempMap;
+			curMi -> map = curMap;
 			i++;
 		}
 		else if(orig_bucket[curr_row][i] == curMap -> value) {
 			i++;
 		}
-		else if(orig_bucket[curr_row][i] > curMap -> value) {
+		else /*if(orig_bucket[curr_row][i] > curMap -> value)*/ {
 			if(curMap -> next != NULL) {
 				if(orig_bucket[curr_row][i] < curMap -> next -> value) {
 					tempMap = calloc(1, sizeof(Map));
